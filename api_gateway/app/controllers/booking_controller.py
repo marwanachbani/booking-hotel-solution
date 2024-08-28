@@ -5,7 +5,7 @@ from app.config.security import get_current_user_role, verify_admin
 
 router = APIRouter()
 
-BOOKING_SERVICE_URL = "https://8002-marwanachba-bookinghote-o7em0h8zkzw.ws-eu115.gitpod.io"
+BOOKING_SERVICE_URL = "https://8002-marwanachba-bookinghote-4ecd0bc5aif.ws-eu115.gitpod.io"
 
 @router.post("/bookings", response_model=dict, dependencies=[Depends(get_current_user_role)])
 async def create_booking(

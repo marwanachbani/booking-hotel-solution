@@ -5,7 +5,7 @@ from app.config.security import verify_admin
 
 router = APIRouter()
 
-HOTEL_SERVICE_URL = "http://hotel_service:8001"
+HOTEL_SERVICE_URL = "https://8001-marwanachba-bookinghote-o7em0h8zkzw.ws-eu115.gitpod.io"
 
 @router.get("/hotels", response_model=List[dict])
 async def get_hotels():

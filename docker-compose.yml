@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  cassandra_user:
+    image: cassandra:4.0
+    container_name: cassandra_user
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "UserCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_DC: DC1
+      CASSANDRA_RACK: RAC1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_user_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cassandra_hotel:
+    image: cassandra:4.0
+    container_name: cassandra_hotel
+    ports:
+      - "9043:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "HotelCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_DC: DC1
+      CASSANDRA_RACK: RAC1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_hotel_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cassandra_booking:
+    image: cassandra:4.0
+    container_name: cassandra_booking
+    ports:
+      - "9044:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "BookingCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_DC: DC1
+      CASSANDRA_RACK: RAC1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_booking_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cassandra_payment:
+    image: cassandra:4.0
+    container_name: cassandra_payment
+    ports:
+      - "9045:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "PaymentCluster"
+      CASSANDRA_NUM_TOKENS: 256
+      CASSANDRA_DC: DC1
+      CASSANDRA_RACK: RAC1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_payment_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  user_service:
+    build: ./user_service
+    container_name: user_service
+    ports:
+      - "8004:8004"
+    depends_on:
+      cassandra_user:
+        condition: service_healthy
+    environment:
+      CASSANDRA_HOST: cassandra_user
+
+  hotel_service:
+    build: ./hotel_service
+    container_name: hotel_service
+    ports:
+      - "8001:8001"
+    depends_on:
+      cassandra_hotel:
+        condition: service_healthy
+    environment:
+      CASSANDRA_HOST: cassandra_hotel
+
+  booking_service:
+    build: ./booking_service
+    container_name: booking_service
+    ports:
+      - "8002:8002"
+    depends_on:
+      cassandra_booking:
+        condition: service_healthy
+    environment:
+      CASSANDRA_HOST: cassandra_booking
+
+  payment_service:
+    build: ./payment_service
+    container_name: payment_service
+    ports:
+      - "8003:8003"
+    depends_on:
+      cassandra_payment:
+        condition: service_healthy
+    environment:
+      CASSANDRA_HOST: cassandra_payment
+
+  api_gateway:
+    build: ./api_gateway
+    container_name: api_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user_service
+      - hotel_service
+      - booking_service
+      - payment_service
+
+volumes:
+  cassandra_user_data:
+  cassandra_hotel_data:
+  cassandra_booking_data:
+  cassandra_payment_data:

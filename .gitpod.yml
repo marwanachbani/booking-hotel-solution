@@ -1,0 +1,33 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - name: Initialize and start services
+    init: |
+      docker-compose up --build -d
+    command: |
+      gp await-port 8000 && gp preview $(gp url 8000)
+
+ports:
+  - port: 8000
+    onOpen: open-preview
+  - port: 8001
+    onOpen: ignore
+  - port: 8002
+    onOpen: ignore
+  - port: 8003
+    onOpen: ignore
+  - port: 8004
+    onOpen: ignore
+  - port: 9042
+    onOpen: ignore
+  - port: 9043
+    onOpen: ignore
+  - port: 9044
+    onOpen: ignore
+  - port: 9045
+    onOpen: ignore
+
+vscode:
+  extensions:
+    - ms-azuretools.vscode-docker

@@ -1,78 +1,38 @@
-from cassandra.cluster import Cluster
-from cassandra.cqlengine.management import sync_table
-from cassandra.cqlengine import columns
-from cassandra.cqlengine.models import Model
-from cassandra.cqlengine import connection
 from app.models.payment import Payment
-from uuid import UUID
+from app.repositories.payment_repository import PaymentRepository
+from app.configs.square_client import get_square_client
+from uuid import uuid4, UUID
+from datetime import datetime
 from typing import List
-import os
 
-class PaymentModel(Model):
-    __keyspace__ = 'payment_service'
-    payment_id = columns.UUID(primary_key=True)
-    booking_id = columns.UUID()
-    amount = columns.Integer()
-    currency = columns.Text()
-    status = columns.Text()
-    created_at = columns.DateTime()
+class PaymentService:
+    def __init__(self, repository: PaymentRepository):
+        self.repository = repository
+        self.square_client = get_square_client()
 
-class PaymentRepository:
-    def __init__(self, cassandra_host: str = os.getenv("CASSANDRA_HOST", "localhost")):
-        self.cluster = Cluster([cassandra_host])
-        self.session = self.cluster.connect()
-        
-        # Set up the keyspace and connection
-        self.KEYSPACE = "payment_service"
-        
-        # Check if keyspace exists; create if not
-        self.session.execute(f"""
-            CREATE KEYSPACE IF NOT EXISTS {self.KEYSPACE}
-            WITH replication = {{ 'class': 'SimpleStrategy', 'replication_factor': '1' }}
-        """)
-        
-        # Set the keyspace for the session
-        self.session.set_keyspace(self.KEYSPACE)
-        
-        # Set up the connection for cqlengine
-        connection.setup([cassandra_host], self.KEYSPACE, protocol_version=3)
-        
-        # Synchronize the model with the Cassandra table
-        sync_table(PaymentModel)
+    def create_payment(self, booking_id: UUID, amount: int, currency: str, source_id: str,
+                       app_fee_amount: int = 0, autocomplete: bool = True, customer_id: str = None,
+                       location_id: str = None, reference_id: str = None, note: str = None) -> Payment:
+        body = {
+            "source_id": source_id,
+            "idempotency_key": str(uuid4()),  # Unique key for preventing duplicate charges
+            "amount_money": {
+                "amount": amount,
+                "currency": currency
+            },
+            "app_fee_money": {
+                "amount": app_fee_amount,
+                "currency": currency
+            } if app_fee_amount else None,
+            "autocomplete": autocomplete,
+            "customer_id": customer_id,
+            "location_id": location_id,
+            "reference_id": reference_id,
+            "note": note
+        }
 
-    def save_payment(self, payment: Payment):
-        PaymentModel.create(
-            payment_id=payment.payment_id,
-            booking_id=payment.booking_id,
-            amount=payment.amount,
-            currency=payment.currency,
-            status=payment.status,
-            created_at=payment.created_at
-        )
+        # Remove None values from the body
+        body = {k: v for k, v in body.items() if v is not None}
 
-    def get_payment(self, payment_id: UUID) -> Payment:
-        payment_model = PaymentModel.objects(payment_id=payment_id).first()
-        if payment_model:
-            return Payment(
-                payment_id=payment_model.payment_id,
-                booking_id=payment_model.booking_id,
-                amount=payment_model.amount,
-                currency=payment_model.currency,
-                status=payment_model.status,
-                created_at=payment_model.created_at
-            )
-        return None
+        result = self.square_client.payments.create_payment(body)
 
-    def get_payments_by_booking(self, booking_id: UUID) -> List[Payment]:
-        payment_models = PaymentModel.objects(booking_id=booking_id).all()
-        return [
-            Payment(
-                payment_id=payment_model.payment_id,
-                booking_id=payment_model.booking_id,
-                amount=payment_model.amount,
-                currency=payment_model.currency,
-                status=payment_model.status,
-                created_at=payment_model.created_at
-            )
-            for payment_model in payment_models
-        ]

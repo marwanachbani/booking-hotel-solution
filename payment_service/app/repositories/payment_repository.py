@@ -17,7 +17,7 @@ class PaymentModel(Model):
     created_at = columns.DateTime()
 
 class PaymentRepository:
-    def __init__(self, cassandra_host: str = "localhost"):
+    def __init__(self, cassandra_host: str = "http://0.0.0.0"):
         self.cluster = Cluster([cassandra_host])
         self.session = self.cluster.connect()
         

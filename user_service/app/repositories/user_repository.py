@@ -18,7 +18,7 @@ class UserModel(Model):
     created_at = columns.DateTime()
 
 class UserRepository:
-    def __init__(self, cassandra_host: str = os.getenv("CASSANDRA_HOST", "localhost")):
+    def __init__(self, cassandra_host: str = os.getenv("CASSANDRA_HOST", "http://0.0.0.0")):
         cluster = Cluster([cassandra_host])
         session = cluster.connect()
 

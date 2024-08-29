@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-USER_SERVICE_URL = "https://8004-marwanachba-bookinghote-o7em0h8zkzw.ws-eu115.gitpod.io"
+USER_SERVICE_URL = "http://0.0.0.0:8004"
 
 # Request models
 class UserCreate(BaseModel):

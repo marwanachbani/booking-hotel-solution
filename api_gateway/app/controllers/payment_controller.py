@@ -4,7 +4,7 @@ from uuid import UUID
 
 router = APIRouter()
 
-PAYMENT_SERVICE_URL = "https://8003-marwanachba-bookinghote-o7em0h8zkzw.ws-eu115.gitpod.io"
+PAYMENT_SERVICE_URL = "http://0.0.0.0:8003"
 
 @router.post("/payments", response_model=dict)
 async def create_payment(
